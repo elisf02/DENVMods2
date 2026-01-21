@@ -149,7 +149,7 @@ for(i in seq(1:nrow(departments))) {
   write.csv(prq_tot, paste0("COL/Climate_population_altitude/Data/level2_", dpt_name, "_total_precipitation.csv"))
 }
 
-#> humidity ----
+#> specific humidity ----
 #> Near-surface specific humidity: huss - per ora uso SIMPLE, check!!
 
 for(i in seq(1:nrow(departments))) {
@@ -197,11 +197,62 @@ for(i in seq(1:nrow(departments))) {
     }
     
   }
+  write.csv(prq_tot, paste0("COL/Climate_population_altitude/Data/level2_", dpt_name, "_spec_hum.csv"))
+}
+
+
+#> relative humidity ----
+#> Near-surface relative humidity: hurs - per ora uso SIMPLE, check!!
+
+for(i in seq(1:nrow(departments))) {
+  prq_tot = c()
+  
+  dpt_name = departments$NAME_1[i]
+  dpt_cod = departments$dep_id[i]
+  
+  mncp_db = df_clean %>%
+    filter(dep_id == dpt_cod) %>%
+    distinct(mun_id, NAME_2)
+  
+  for (i in as.numeric(mncp_db$mun_id)) {
+    print(paste(dpt_name,",", mncp_db$NAME_2[i]))
+    mun_cod = mncp_db$mun_id[i]
+    name_file = paste0('/Central_America_COL_v410_', dpt_cod, '_', mun_cod, 
+                       '_2_CHIRPSv3_ERA5Land_1981_2024_observation.parquet.gzip')
+    
+    prq = read_parquet(paste0(setwd_climate, 
+                              name_file))
+    
+    prq = prq %>%
+      mutate(year = year(Date),
+             day = yday(Date)) %>%
+      select(day, year, hurs_static) %>%
+      rename(!!make_clean_names(mncp_db$NAME_2[i]) := hurs_static)    
+    
+    # prq_dpt_mun = data.frame(prq) %>%
+    #   mutate(NAME_1 = dpt_name,
+    #          DPT_ID = dpt_cod,
+    #          NAME_2 = mncp_db$NAME_2[i],
+    #          MNC_ID = mun_cod)
+    # 
+    
+    
+    #> Daily temperature time series 
+    #> from two regions were aligned by year and ISO day and merged into a single dataset.
+    if (is.null(prq_tot)) {
+      prq_tot <- prq
+    } else {
+      prq_tot <- prq_tot %>%
+        left_join(
+          prq,
+          by = c("year", "day"))
+    }
+    
+  }
   write.csv(prq_tot, paste0("COL/Climate_population_altitude/Data/level2_", dpt_name, "_rel_hum.csv"))
 }
 
 
-    
-    
-    
- 
+
+
+
