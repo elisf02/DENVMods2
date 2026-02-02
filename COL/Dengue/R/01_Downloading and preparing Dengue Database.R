@@ -662,3 +662,112 @@ saveRDS(weekly_counts_all_altitude,
         "COL/Dengue/Data/COL_Dengue_Zulma2008_EF_moreAges_all_altitude.RDS")
 saveRDS(weekly_countsbis_all_altitude, 
         "COL/Dengue/Data/COL_Dengue_Zulma2008_EF_lessAges_all_altitude.RDS")
+
+# final per ODIN ----
+library(dplyr)
+library(lubridate)
+library(tidyr)
+library(purrr)
+
+
+weekly_counts = readRDS("COL/Dengue/Data/COL_Dengue_Zulma2008_EF_moreAges_low2300.RDS")
+weekly_countsbis = readRDS("COL/Dengue/Data/COL_Dengue_Zulma2008_EF_lessAges_low2300.RDS")
+
+weekly_counts_all_altitude = readRDS("COL/Dengue/Data/COL_Dengue_Zulma2008_EF_moreAges_all_altitude.RDS")
+weekly_countsbis_all_altitude = readRDS("COL/Dengue/Data/COL_Dengue_Zulma2008_EF_lessAges_all_altitude.RDS")
+
+# esporto solo i casi sommati per dipartimento e per settimana, filtrando per 2300 m, per i 21 dpts
+
+selected_dpt = c("antioquia", 
+                 "atlantico", 
+                 "bolivar", 
+                 "boyaca",
+                 "caldas",
+                 "cauca",  
+                 "cesar",
+                 "cordoba", 
+                 "cundinamarca", 
+                 "guajira",
+                 "huila", 
+                 "magdalena", 
+                 "meta",
+                 "narino", 
+                 "norte_santander",
+                 "risaralda",
+                 "santander", 
+                 "sucre",
+                 "valle",  
+                 "tolima")
+
+length(selected_dpt)
+
+
+dfDengue_21_full = weekly_counts %>%
+  filter(department %in% selected_dpt) %>%
+  group_by(isoweek, isoyear, age_lower, department) %>%
+  summarise(cases = sum(cases)) %>%
+  ungroup() %>%
+  pivot_wider(
+    names_from  = department,
+    values_from = cases,
+    values_fill = 0
+  )
+# dfDengue_21_full <- dfDengue_21_full %>%
+#   mutate(across(where(is.numeric), ~ replace_na(.x, 0)))
+saveRDS(dfDengue_21_full, "COL/Dengue/Data/wrangled for Odin/dfDengue_21_less2300_DPT_full.RDS")
+write.csv(
+  dfDengue_21_full,
+  file = "COL/Dengue/Data/wrangled for Odin/dfDengue_21_less2300_DPT_full.csv",
+  row.names = FALSE
+)
+
+dfDengue_21_age = weekly_counts %>%
+  filter(department %in% selected_dpt) %>%
+  group_by(age_lower, department) %>%
+  summarise(cases = sum(cases)) %>%
+  pivot_wider(
+    names_from  = department,
+    values_from = cases,
+    values_fill = 0
+  )
+saveRDS(dfDengue_21_age, "COL/Dengue/Data/wrangled for Odin/dfDengue_21_less2300_DPT_age.RDS")
+write.csv(
+  dfDengue_21_age,
+  file = "COL/Dengue/Data/wrangled for Odin/dfDengue_21_less2300_DPT_age.csv",
+  row.names = FALSE
+)
+
+dfDengue_21_yr = weekly_counts %>%
+  filter(department %in% selected_dpt) %>%
+  group_by(isoyear, department) %>%
+  summarise(cases = sum(cases)) %>%
+  pivot_wider(
+    names_from  = department,
+    values_from = cases,
+    values_fill = 0
+  ) %>%
+  rename(year = isoyear)
+saveRDS(dfDengue_21_yr, "COL/Dengue/Data/wrangled for Odin/dfDengue_21_less2300_DPT_yr.RDS")
+write.csv(
+  dfDengue_21_yr,
+  file = "COL/Dengue/Data/wrangled for Odin/dfDengue_21_less2300_DPT_yr.csv",
+  row.names = FALSE
+)
+
+dfDengue_21_week = weekly_counts %>%
+  filter(department %in% selected_dpt) %>%
+  group_by(isoweek, department) %>%
+  summarise(cases = sum(cases)) %>%
+  pivot_wider(
+    names_from  = department,
+    values_from = cases,
+    values_fill = 0
+  ) %>%
+  rename(week = isoweek)
+saveRDS(dfDengue_21_week, "COL/Dengue/Data/wrangled for Odin/dfDengue_21_less2300_DPT_week.RDS")
+write.csv(
+  dfDengue_21_week,
+  file = "COL/Dengue/Data/wrangled for Odin/dfDengue_21_less2300_DPT_week.csv",
+  row.names = FALSE
+)
+
